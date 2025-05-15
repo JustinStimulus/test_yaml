@@ -79,9 +79,17 @@ spec:
         - POST
         - GET
         - OPTIONS
-        allowHeaders:
-        - "*"
-    
+        allowHeaders: "*"
+        exposeHeaders: "*"
+        allowCredentials: true
+      headers:
+        request:
+          set:
+            X-Forwarded-Proto: "https"
+        response:
+          set:
+            Access-Control-Allow-Origin: "https://sde-dev.getstimulus.ai"
+
     - match:
       - authority:
           exact: sde-dev.getstimulus.ai
@@ -102,9 +110,17 @@ spec:
         - POST
         - GET
         - OPTIONS
-        allowHeaders:
-        - "*"
-    
+        allowHeaders: "*"
+        exposeHeaders: "*"
+        allowCredentials: true
+      headers:
+        request:
+          set:
+            X-Forwarded-Proto: "https"
+        response:
+          set:
+            Access-Control-Allow-Origin: "https://sde-dev.getstimulus.ai"
+
     - match:
       - authority:
           exact: sde-dev-api.getstimulus.ai
@@ -123,8 +139,16 @@ spec:
         - POST
         - GET
         - OPTIONS
-        allowHeaders:
-        - "*"
+        allowHeaders: "*"
+        exposeHeaders: "*"
+        allowCredentials: true
+      headers:
+        request:
+          set:
+            X-Forwarded-Proto: "https"
+        response:
+          set:
+            Access-Control-Allow-Origin: "https://sde-dev.getstimulus.ai"
 
     # Databricks SQL Proxy
     - match:
