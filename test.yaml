@@ -80,9 +80,9 @@ spec:
         - GET
         - OPTIONS
         allowHeaders:
-        - "*"
+        - ["*"]
         exposeHeaders:
-        - "*"
+        - ["*"]
         allowCredentials: true
       headers:
         request:
@@ -113,9 +113,9 @@ spec:
         - GET
         - OPTIONS
         allowHeaders:
-        - "*"
+        - ["*"]
         exposeHeaders:
-        - "*"
+        - ["*"]
         allowCredentials: true
       headers:
         request:
@@ -144,9 +144,9 @@ spec:
         - GET
         - OPTIONS
         allowHeaders:
-        - "*"
+        - ["*"]
         exposeHeaders:
-        - "*"
+        - ["*"]
         allowCredentials: true
       headers:
         request:
