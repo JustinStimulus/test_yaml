@@ -79,8 +79,10 @@ spec:
         - POST
         - GET
         - OPTIONS
-        allowHeaders: "*"
-        exposeHeaders: "*"
+        allowHeaders:
+        - "*"
+        exposeHeaders:
+        - "*"
         allowCredentials: true
       headers:
         request:
@@ -110,8 +112,10 @@ spec:
         - POST
         - GET
         - OPTIONS
-        allowHeaders: "*"
-        exposeHeaders: "*"
+        allowHeaders:
+        - "*"
+        exposeHeaders:
+        - "*"
         allowCredentials: true
       headers:
         request:
@@ -139,8 +143,10 @@ spec:
         - POST
         - GET
         - OPTIONS
-        allowHeaders: "*"
-        exposeHeaders: "*"
+        allowHeaders:
+        - "*"
+        exposeHeaders:
+        - "*"
         allowCredentials: true
       headers:
         request:
