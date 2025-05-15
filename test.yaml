@@ -62,44 +62,69 @@ spec:
 
     # Vector Search from frontend (POST /api/vector-search) -- sde-dev.getstimulus.ai
     - match:
-        - authority:
-            exact: sde-dev.getstimulus.ai
-          uri:
-            prefix: /api/vector-search
+      - authority:
+          exact: sde-dev.getstimulus.ai
+        uri:
+          prefix: /api/vector-search
       route:
-        - destination:
-            host: stimulus-web.stimulus-dev.svc.cluster.local
-            port:
-              number: 3000
-      timeout: 300s    
-
-    # Route for API service (with rewrite)
+      - destination:
+          host: stimulus-web.stimulus-dev.svc.cluster.local
+          port:
+            number: 3000
+      timeout: 300s
+      corsPolicy:
+        allowOrigins:
+        - exact: https://sde-dev.getstimulus.ai
+        allowMethods:
+        - POST
+        - GET
+        - OPTIONS
+        allowHeaders:
+        - "*"
+    
     - match:
-        - authority:
-            exact: sde-dev.getstimulus.ai
-          uri:
-            prefix: /api/v1/vector-search
+      - authority:
+          exact: sde-dev.getstimulus.ai
+        uri:
+          prefix: /api/v1/vector-search
       rewrite:
         uri: /api/v1/vector-search
       route:
-        - destination:
-            host: stimulus-api.stimulus-dev.svc.cluster.local
-            port:
-              number: 8000
+      - destination:
+          host: stimulus-api.stimulus-dev.svc.cluster.local
+          port:
+            number: 8000
       timeout: 300s
-
-    # Separate API domain route
+      corsPolicy:
+        allowOrigins:
+        - exact: https://sde-dev.getstimulus.ai
+        allowMethods:
+        - POST
+        - GET
+        - OPTIONS
+        allowHeaders:
+        - "*"
+    
     - match:
-        - authority:
-            exact: sde-dev-api.getstimulus.ai
-          uri:
-            prefix: /api/v1/vector-search
+      - authority:
+          exact: sde-dev-api.getstimulus.ai
+        uri:
+          prefix: /api/v1/vector-search
       route:
-        - destination:
-            host: stimulus-api.stimulus-dev.svc.cluster.local
-            port:
-              number: 8000
+      - destination:
+          host: stimulus-api.stimulus-dev.svc.cluster.local
+          port:
+            number: 8000
       timeout: 300s
+      corsPolicy:
+        allowOrigins:
+        - exact: https://sde-dev.getstimulus.ai
+        allowMethods:
+        - POST
+        - GET
+        - OPTIONS
+        allowHeaders:
+        - "*"
 
     # Databricks SQL Proxy
     - match:
