@@ -73,11 +73,23 @@ spec:
             number: 3000
       timeout: 300s
       corsPolicy:
-        allowOrigins: ["https://sde-dev.getstimulus.ai"]
-        allowMethods: ["POST", "GET", "OPTIONS", "PUT", "DELETE"]
-        allowHeaders: ["*"]
-        maxAge: "86400s"  # 24 hours in proper duration format
-
+        allowCredentials: true
+        allowHeaders:
+        - content-type
+        - authorization
+        - x-token
+        - x-origin
+        - refresh-token
+        allowMethods:
+        - GET
+        - POST
+        - PUT
+        - DELETE
+        - PATCH
+        - OPTIONS
+        allowOrigin:
+        - '*'
+        maxAge: 300s
     # Backend API route (v1)
     - match:
       - authority:
@@ -91,10 +103,23 @@ spec:
             number: 8000
       timeout: 300s
       corsPolicy:
-        allowOrigins: ["https://sde-dev.getstimulus.ai"]
-        allowMethods: ["POST", "GET", "OPTIONS", "PUT", "DELETE"]
-        allowHeaders: ["*"]
-        maxAge: "86400s"  # 24 hours in proper duration format
+        allowCredentials: true
+        allowHeaders:
+        - content-type
+        - authorization
+        - x-token
+        - x-origin
+        - refresh-token
+        allowMethods:
+        - GET
+        - POST
+        - PUT
+        - DELETE
+        - PATCH
+        - OPTIONS
+        allowOrigin:
+        - '*'
+        maxAge: 300s
 
     # Direct API endpoint
     - match:
@@ -109,10 +134,23 @@ spec:
             number: 8000
       timeout: 300s
       corsPolicy:
-        allowOrigins: ["https://sde-dev.getstimulus.ai"]
-        allowMethods: ["POST", "GET", "OPTIONS", "PUT", "DELETE"]
-        allowHeaders: ["*"]
-        maxAge: "86400s"  # 24 hours in proper duration format
+        allowCredentials: true
+        allowHeaders:
+        - content-type
+        - authorization
+        - x-token
+        - x-origin
+        - refresh-token
+        allowMethods:
+        - GET
+        - POST
+        - PUT
+        - DELETE
+        - PATCH
+        - OPTIONS
+        allowOrigin:
+        - '*'
+        maxAge: 300s
 
     # Databricks SQL Proxy
     - match:
