@@ -1,65 +1,26 @@
-apiVersion: networking.k8s.io/v1
-kind: Ingress
+apiVersion: networking.istio.io/v1
+kind: Gateway
 metadata:
-  name: stimulus-ingress
-  namespace: stimulus-dev
   annotations:
-    # Basic Config
-    kubernetes.io/ingress.class: nginx
-    cert-manager.io/cluster-issuer: letsencrypt-prod
-    
-    # SSL/Redirects
-    nginx.ingress.kubernetes.io/ssl-redirect: "true"
-    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
-    
-    # CORS Configuration
-    nginx.ingress.kubernetes.io/enable-cors: "true"
-    nginx.ingress.kubernetes.io/cors-allow-origin: "https://sde-dev.getstimulus.ai"
-    nginx.ingress.kubernetes.io/cors-allow-methods: "GET, POST, PUT, DELETE, OPTIONS"
-    nginx.ingress.kubernetes.io/cors-allow-headers: "Authorization, Content-Type, X-Requested-With"
-    nginx.ingress.kubernetes.io/proxy-pass-headers: "Authorization"
-    nginx.ingress.kubernetes.io/cors-allow-credentials: "true"
-    nginx.ingress.kubernetes.io/cors-max-age: "86400"
-    
-    # Authentication Headers
-    nginx.ingress.kubernetes.io/configuration-snippet: |
-      more_set_headers "Access-Control-Allow-Origin: https://sde-dev.getstimulus.ai";
-      more_set_headers "Access-Control-Allow-Credentials: true";
-    
-    # Body and Routing
-    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
-    nginx.ingress.kubernetes.io/rewrite-target: /$1
-    nginx.ingress.kubernetes.io/use-regex: "true"
-    
-    # Critical for Authentication
-    nginx.ingress.kubernetes.io/auth-headers: |
-      Authorization $http_authorization
-    nginx.ingress.kubernetes.io/enable-underscores-in-headers: "true"
-
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"networking.istio.io/v1beta1","kind":"Gateway","metadata":{"annotations":{},"name":"stimulus-data-engine-gateway","namespace":"stimulus-dev"},"spec":{"selector":{"istio":"ingressgateway"},"servers":[{"hosts":["sde-dev.getstimulus.ai","sde-dev-api.getstimulus.ai"],"port":{"name":"http","number":80,"protocol":"HTTP"}}]}}
+  creationTimestamp: "2025-04-28T04:32:56Z"
+  generation: 3
+  name: stimulus-data-engine-gateway
+  namespace: stimulus-dev
+  resourceVersion: "423073116"
+  uid: 3e5b5473-a346-41e0-bfae-0246b8291c1f
 spec:
-  tls:
+  selector:
+    istio: ingressgateway
+  servers:
   - hosts:
     - sde-dev.getstimulus.ai
     - sde-dev-api.getstimulus.ai
-    secretName: stimulus-tls
-  rules:
-  - host: sde-dev.getstimulus.ai
-    http:
-      paths:
-      - path: /(.*)
-        pathType: Prefix
-        backend:
-          service:
-            name: stimulus-web
-            port:
-              number: 3000
-  - host: sde-dev-api.getstimulus.ai
-    http:
-      paths:
-      - path: /api/v1/(.*)
-        pathType: Prefix
-        backend:
-          service:
-            name: stimulus-api
-            port:
-              number: 8000
+    port:
+      name: https
+      number: 443
+      protocol: HTTPS
+    tls:
+      credentialName: stimulus-tls
+      mode: SIMPLE
