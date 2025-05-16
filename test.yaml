@@ -1,15 +1,8 @@
 apiVersion: networking.istio.io/v1
 kind: Gateway
 metadata:
-  annotations:
-    kubectl.kubernetes.io/last-applied-configuration: |
-      {"apiVersion":"networking.istio.io/v1beta1","kind":"Gateway","metadata":{"annotations":{},"name":"stimulus-data-engine-gateway","namespace":"stimulus-dev"},"spec":{"selector":{"istio":"ingressgateway"},"servers":[{"hosts":["sde-dev.getstimulus.ai","sde-dev-api.getstimulus.ai"],"port":{"name":"http","number":80,"protocol":"HTTP"}}]}}
-  creationTimestamp: "2025-04-28T04:32:56Z"
-  generation: 3
   name: stimulus-data-engine-gateway
   namespace: stimulus-dev
-  resourceVersion: "423073116"
-  uid: 3e5b5473-a346-41e0-bfae-0246b8291c1f
 spec:
   selector:
     istio: ingressgateway
@@ -24,3 +17,13 @@ spec:
     tls:
       credentialName: stimulus-tls
       mode: SIMPLE
+  # Add HTTP->HTTPS redirect (recommended)
+  - hosts:
+    - sde-dev.getstimulus.ai
+    - sde-dev-api.getstimulus.ai
+    port:
+      name: http
+      number: 80
+      protocol: HTTP
+    tls:
+      httpsRedirect: true
