@@ -1,4 +1,4 @@
-apiVersion: networking.istio.io/v1alpha3
+apiVersion: networking.istio.io/v1beta1
 kind: VirtualService
 metadata:
   name: stimulus-data-engine
@@ -87,7 +87,7 @@ spec:
           set:
             x-forwarded-proto: https
             x-forwarded-host: sde-dev.getstimulus.ai
-
+          preserve: ["authorization", "cookie"]
     # Databricks SQL Proxy
     - match:
         - authority:
