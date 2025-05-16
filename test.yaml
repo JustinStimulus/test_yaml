@@ -3,15 +3,6 @@ kind: VirtualService
 metadata:
   name: stimulus-data-engine
   namespace: stimulus-dev
-  annotations:
-    # Ensure proper header handling
-    proxy.istio.io/config: |
-      {
-        "gatewayTopology": {
-          "numTrustedProxies": 2,
-          "forwardClientCertDetails": "SANITIZE_SET"
-        }
-      }
 spec:
   gateways:
     - stimulus-dev/stimulus-data-engine-gateway
@@ -19,9 +10,8 @@ spec:
     - sde-dev.getstimulus.ai
     - sde-dev-api.getstimulus.ai
   http:
-    # ========================
-    # HEALTH CHECK ENDPOINTS
-    # ========================
+
+    # Health Check
     - match:
         - authority:
             exact: sde-dev-api.getstimulus.ai
@@ -34,73 +24,6 @@ spec:
               number: 8000
       timeout: 10s
 
-    # ========================
-    # CORS PREFLIGHT HANDLING
-    # ========================
-    - match:
-        - method:
-            exact: OPTIONS
-      route:
-        - destination:
-            host: stimulus-api.stimulus-dev.svc.cluster.local
-            port:
-              number: 8000
-      headers:
-        response:
-          set:
-            access-control-allow-origin: "https://sde-dev.getstimulus.ai"
-            access-control-allow-methods: "GET, POST, PUT, DELETE, OPTIONS"
-            access-control-allow-headers: "Authorization, Content-Type, X-Requested-With"
-            access-control-allow-credentials: "true"
-            access-control-max-age: "86400"
-      timeout: 10s
-
-    # ========================
-    # VECTOR SEARCH ENDPOINT
-    # ========================
-    - match:
-        - authority:
-            exact: sde-dev.getstimulus.ai
-          uri:
-            prefix: /api/vector-search
-      rewrite:
-        uri: /api/v1/vector-search/search
-      route:
-        - destination:
-            host: stimulus-api.stimulus-dev.svc.cluster.local
-            port:
-              number: 8000
-      headers:
-        request:
-          set:
-            x-forwarded-host: sde-dev.getstimulus.ai
-            x-forwarded-proto: https
-            x-original-uri: /api/vector-search
-          add:
-            x-auth-request-headers: "Authorization,Content-Type"
-        response:
-          set:
-            access-control-allow-origin: "https://sde-dev.getstimulus.ai"
-            access-control-allow-credentials: "true"
-      corsPolicy:
-        allowOrigins:
-          - exact: https://sde-dev.getstimulus.ai
-        allowMethods:
-          - POST
-          - OPTIONS
-        allowHeaders:
-          - authorization
-          - content-type
-          - x-requested-with
-        allowCredentials: true
-        exposeHeaders:
-          - authorization
-          - x-auth-request-redirect
-      timeout: 300s
-
-    # ========================
-    # FRONTEND API ROUTES
-    # ========================
     - match:
         - authority:
             exact: sde-dev.getstimulus.ai
@@ -111,7 +34,7 @@ spec:
             host: stimulus-web.stimulus-dev.svc.cluster.local
             port:
               number: 3000
-      timeout: 10s
+      timeout: 10s      
 
     - match:
         - authority:
@@ -137,9 +60,59 @@ spec:
               number: 3000
       timeout: 10s
 
-    # ========================
-    # DATABRICKS SQL PROXY
-    # ========================
+    # Vector Search from frontend (POST /api/vector-search) -- sde-dev.getstimulus.ai
+    - match:
+      - authority:
+          exact: sde-dev.getstimulus.ai
+        uri:
+          prefix: /api/vector-search
+      route:
+      - destination:
+          host: stimulus-web.stimulus-dev.svc.cluster.local
+          port:
+            number: 3000
+      timeout: 300s
+    - match:
+      - uri:
+          prefix: /api/vector-search
+      rewrite:
+        uri: /api/v1/vector-search/search
+      route:
+      - destination:
+          host: stimulus-api.stimulus-dev.svc.cluster.local
+          port:
+            number: 8000
+      headers:
+        request:
+          set:
+            x-forwarded-host: sde-dev.getstimulus.ai
+            x-forwarded-proto: https
+      corsPolicy:
+        allowOrigins:
+        - exact: https://sde-dev.getstimulus.ai
+        allowMethods:
+        - POST
+        - GET
+        - OPTIONS
+        allowHeaders:
+        - authorization
+        - content-type
+        - cookie
+      timeout: 300s
+    # Databricks SQL Proxy
+    - match:
+        - authority:
+            exact: sde-dev.getstimulus.ai
+          uri:
+            prefix: /api/proxy/databricks-sql
+      route:
+        - destination:
+            host: stimulus-web.stimulus-dev.svc.cluster.local
+            port:
+              number: 3000
+      timeout: 300s
+   
+
     - match:
         - authority:
             exact: sde-dev.getstimulus.ai
@@ -152,10 +125,6 @@ spec:
             host: stimulus-api.stimulus-dev.svc.cluster.local
             port:
               number: 8000
-      headers:
-        request:
-          set:
-            x-forwarded-host: sde-dev.getstimulus.ai
       timeout: 300s
 
     - match:
@@ -168,11 +137,9 @@ spec:
             host: stimulus-api.stimulus-dev.svc.cluster.local
             port:
               number: 8000
-      timeout: 300s
+      timeout: 300s  
 
-    # ========================
-    # COPILOT KIT
-    # ========================
+    # CopilotKit handled by frontend
     - match:
         - authority:
             exact: sde-dev.getstimulus.ai
@@ -185,9 +152,7 @@ spec:
               number: 3000
       timeout: 120s
 
-    # ========================
-    # CATCH-ALL ROUTES
-    # ========================
+    # API catch-all (other /api/ calls)
     - match:
         - authority:
             exact: sde-dev.getstimulus.ai
@@ -198,13 +163,9 @@ spec:
             host: stimulus-api.stimulus-dev.svc.cluster.local
             port:
               number: 8000
-      headers:
-        request:
-          set:
-            x-forwarded-host: sde-dev.getstimulus.ai
-            x-forwarded-proto: https
       timeout: 300s
 
+    # Frontend (dashboard, etc.)
     - match:
         - authority:
             exact: sde-dev.getstimulus.ai
@@ -217,6 +178,7 @@ spec:
               number: 3000
       timeout: 30s
 
+    # API direct access catch-all for sde-dev-api
     - match:
         - authority:
             exact: sde-dev-api.getstimulus.ai
