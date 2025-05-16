@@ -1,29 +1,64 @@
-apiVersion: networking.istio.io/v1
-kind: Gateway
+apiVersion: networking.k8s.io/v1
+kind: Ingress
 metadata:
-  name: stimulus-data-engine-gateway
+  name: stimulus-ingress
   namespace: stimulus-dev
+  annotations:
+    # Basic Config
+    kubernetes.io/ingress.class: nginx
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    
+    # SSL/Redirects
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    
+    # CORS Configuration
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/cors-allow-origin: "https://sde-dev.getstimulus.ai"
+    nginx.ingress.kubernetes.io/cors-allow-methods: "GET, POST, PUT, DELETE, OPTIONS"
+    nginx.ingress.kubernetes.io/cors-allow-headers: "Authorization, Content-Type, X-Requested-With"
+    nginx.ingress.kubernetes.io/cors-allow-credentials: "true"
+    nginx.ingress.kubernetes.io/cors-max-age: "86400"
+    
+    # Authentication Headers
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      more_set_headers "Access-Control-Allow-Origin: https://sde-dev.getstimulus.ai";
+      more_set_headers "Access-Control-Allow-Credentials: true";
+    
+    # Body and Routing
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+    nginx.ingress.kubernetes.io/rewrite-target: /$1
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    
+    # Critical for Authentication
+    nginx.ingress.kubernetes.io/auth-headers: |
+      Authorization $http_authorization
+    nginx.ingress.kubernetes.io/enable-underscores-in-headers: "true"
+
 spec:
-  selector:
-    istio: ingressgateway
-  servers:
+  tls:
   - hosts:
     - sde-dev.getstimulus.ai
     - sde-dev-api.getstimulus.ai
-    port:
-      name: https
-      number: 443
-      protocol: HTTPS
-    tls:
-      credentialName: stimulus-tls
-      mode: SIMPLE
-  # Add HTTP->HTTPS redirect (recommended)
-  - hosts:
-    - sde-dev.getstimulus.ai
-    - sde-dev-api.getstimulus.ai
-    port:
-      name: http
-      number: 80
-      protocol: HTTP
-    tls:
-      httpsRedirect: true
+    secretName: stimulus-tls
+  rules:
+  - host: sde-dev.getstimulus.ai
+    http:
+      paths:
+      - path: /(.*)
+        pathType: Prefix
+        backend:
+          service:
+            name: stimulus-web
+            port:
+              number: 3000
+  - host: sde-dev-api.getstimulus.ai
+    http:
+      paths:
+      - path: /api/v1/(.*)
+        pathType: Prefix
+        backend:
+          service:
+            name: stimulus-api
+            port:
+              number: 8000
