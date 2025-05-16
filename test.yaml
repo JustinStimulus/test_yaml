@@ -5,7 +5,7 @@ metadata:
   namespace: stimulus-dev
 spec:
   gateways:
-    - stimulus-dev/stimulus-data-engine-gateway
+    - stimulus-gateway
   hosts:
     - sde-dev.getstimulus.ai
     - sde-dev-api.getstimulus.ai
@@ -85,9 +85,20 @@ spec:
       headers:
         request:
           set:
-            x-forwarded-proto: https
             x-forwarded-host: sde-dev.getstimulus.ai
-          preserve: ["authorization", "cookie"]
+            x-forwarded-proto: https
+      corsPolicy:
+        allowOrigins:
+        - exact: https://sde-dev.getstimulus.ai
+        allowMethods:
+        - POST
+        - GET
+        - OPTIONS
+        allowHeaders:
+        - authorization
+        - content-type
+        - cookie
+      timeout: 300s
     # Databricks SQL Proxy
     - match:
         - authority:
