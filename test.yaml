@@ -73,26 +73,9 @@ spec:
             number: 3000
       timeout: 300s
       corsPolicy:
-        allowOrigins:
-        - exact: https://sde-dev.getstimulus.ai
-        allowMethods:
-        - POST
-        - GET
-        - OPTIONS
-        - PUT
-        - DELETE
-        allowHeaders:
-        - authorization
-        - content-type
-        - x-requested-with
-        - x-csrf-token
-        - x-api-version
-        exposeHeaders:
-        - content-type
-        - x-api-version
-        - x-request-id
-        - x-response-time
-        allowCredentials: true
+        allowOrigins: ["https://sde-dev.getstimulus.ai"]
+        allowMethods: ["POST", "GET", "OPTIONS", "PUT", "DELETE"]
+        allowHeaders: ["*"]
         maxAge: "86400s"  # 24 hours in proper duration format
 
     # Backend API route (v1)
@@ -108,26 +91,9 @@ spec:
             number: 8000
       timeout: 300s
       corsPolicy:
-        allowOrigins:
-        - exact: https://sde-dev.getstimulus.ai
-        allowMethods:
-        - POST
-        - GET
-        - OPTIONS
-        - PUT
-        - DELETE
-        allowHeaders:
-        - authorization
-        - content-type
-        - x-requested-with
-        - x-api-key
-        - x-api-version
-        exposeHeaders:
-        - content-length
-        - content-type
-        - x-api-version
-        - x-request-id
-        allowCredentials: true
+        allowOrigins: ["https://sde-dev.getstimulus.ai"]
+        allowMethods: ["POST", "GET", "OPTIONS", "PUT", "DELETE"]
+        allowHeaders: ["*"]
         maxAge: "86400s"  # 24 hours in proper duration format
 
     # Direct API endpoint
@@ -143,24 +109,9 @@ spec:
             number: 8000
       timeout: 300s
       corsPolicy:
-        allowOrigins:
-        - exact: https://sde-dev.getstimulus.ai
-        allowMethods:
-        - POST
-        - GET
-        - OPTIONS
-        - PUT
-        - DELETE
-        allowHeaders:
-        - authorization
-        - content-type
-        - x-requested-with
-        - x-api-key
-        exposeHeaders:
-        - content-length
-        - content-type
-        - x-request-id
-        allowCredentials: true
+        allowOrigins: ["https://sde-dev.getstimulus.ai"]
+        allowMethods: ["POST", "GET", "OPTIONS", "PUT", "DELETE"]
+        allowHeaders: ["*"]
         maxAge: "86400s"  # 24 hours in proper duration format
 
     # Databricks SQL Proxy
@@ -175,7 +126,6 @@ spec:
             port:
               number: 3000
       timeout: 300s
-   
 
     - match:
         - authority:
