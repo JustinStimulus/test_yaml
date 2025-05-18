@@ -23,17 +23,6 @@ spec:
             port:
               number: 8000
       timeout: 10s
-    - match:
-        - authority:
-            exact: sde-dev-api.getstimulus.ai
-          uri:
-            exact: /test
-      route:
-        - destination:
-            host: stimulus-api.stimulus-dev.svc.cluster.local
-            port:
-              number: 8000
-      timeout: 10s
 
     - match:
         - authority:
@@ -46,6 +35,34 @@ spec:
             port:
               number: 3000
       timeout: 10s      
+
+
+    - match:
+        - authority:
+            exact: sde-dev.getstimulus.ai
+          uri:
+            prefix: /api/test
+      rewrite:
+        uri: /test
+      route:
+        - destination:
+            host: stimulus-api.stimulus-dev.svc.cluster.local
+            port:
+              number: 8000
+      timeout: 300s
+
+    - match:
+        - authority:
+            exact: sde-dev-api.getstimulus.ai
+          uri:
+            prefix: /test
+      route:
+        - destination:
+            host: stimulus-api.stimulus-dev.svc.cluster.local
+            port:
+              number: 8000
+      timeout: 300s  
+
 
     - match:
         - authority:
