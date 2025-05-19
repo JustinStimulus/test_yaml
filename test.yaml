@@ -1,26 +1,134 @@
-apiVersion: networking.istio.io/v1
-kind: Gateway
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
 metadata:
-  annotations:
-    kubectl.kubernetes.io/last-applied-configuration: |
-      {"apiVersion":"networking.istio.io/v1beta1","kind":"Gateway","metadata":{"annotations":{},"name":"stimulus-data-engine-gateway","namespace":"stimulus-dev"},"spec":{"selector":{"istio":"ingressgateway"},"servers":[{"hosts":["sde-dev.getstimulus.ai","sde-dev-api.getstimulus.ai"],"port":{"name":"http","number":80,"protocol":"HTTP"}}]}}
-  creationTimestamp: "2025-04-28T04:32:56Z"
-  generation: 3
-  name: stimulus-data-engine-gateway
+  name: stimulus-data-engine
   namespace: stimulus-dev
-  resourceVersion: "423073116"
-  uid: 3e5b5473-a346-41e0-bfae-0246b8291c1f
 spec:
-  selector:
-    istio: ingressgateway
-  servers:
-  - hosts:
+  gateways:
+    - stimulus-dev/stimulus-data-engine-gateway
+  hosts:
     - sde-dev.getstimulus.ai
     - sde-dev-api.getstimulus.ai
-    port:
-      name: https
-      number: 443
-      protocol: HTTPS
-    tls:
-      credentialName: stimulus-tls
-      mode: SIMPLE
+  http:
+
+    # Health Check
+    - match:
+        - authority:
+            exact: sde-dev-api.getstimulus.ai
+          uri:
+            exact: /health
+      route:
+        - destination:
+            host: stimulus-api.stimulus-dev.svc.cluster.local
+            port:
+              number: 8000
+      timeout: 10s
+
+    # Vector Search from frontend (POST /api/vector-search) -- sde-dev.getstimulus.ai
+    - match:
+        - authority:
+            exact: sde-dev.getstimulus.ai
+          uri:
+            exact: /api/vector-search
+      route:
+        - destination:
+            host: stimulus-web.stimulus-dev.svc.cluster.local
+            port:
+              number: 3000
+      timeout: 300s
+
+    - match:
+        - authority:
+            exact: sde-dev.getstimulus.ai
+          uri:
+            exact: /api/vector-search
+      rewrite:
+        uri: /api/v1/vector-search/search
+      route:
+        - destination:
+            host: stimulus-api.stimulus-dev.svc.cluster.local
+            port:
+              number: 8000
+      timeout: 300s
+
+    # New rule for sde-dev-api.getstimulus.ai (your fix!)
+    - match:
+        - authority:
+            exact: sde-dev-api.getstimulus.ai
+          uri:
+            exact: /api/vector-search
+      rewrite:
+        uri: /api/v1/vector-search/search
+      route:
+        - destination:
+            host: stimulus-api.stimulus-dev.svc.cluster.local
+            port:
+              number: 8000
+      timeout: 300s
+
+    # Databricks SQL Proxy
+    - match:
+        - authority:
+            exact: sde-dev.getstimulus.ai
+          uri:
+            prefix: /api/proxy/databricks-sql/
+      rewrite:
+        uri: /api/v1/databricks-sql/
+      route:
+        - destination:
+            host: stimulus-api.stimulus-dev.svc.cluster.local
+            port:
+              number: 8000
+      timeout: 300s
+
+    # CopilotKit handled by frontend
+    - match:
+        - authority:
+            exact: sde-dev.getstimulus.ai
+          uri:
+            prefix: /api/copilotkit
+      route:
+        - destination:
+            host: stimulus-web.stimulus-dev.svc.cluster.local
+            port:
+              number: 3000
+      timeout: 120s
+
+    # API catch-all (other /api/ calls)
+    - match:
+        - authority:
+            exact: sde-dev.getstimulus.ai
+          uri:
+            prefix: /api/
+      route:
+        - destination:
+            host: stimulus-api.stimulus-dev.svc.cluster.local
+            port:
+              number: 8000
+      timeout: 300s
+
+    # Frontend (dashboard, etc.)
+    - match:
+        - authority:
+            exact: sde-dev.getstimulus.ai
+          uri:
+            prefix: /
+      route:
+        - destination:
+            host: stimulus-web.stimulus-dev.svc.cluster.local
+            port:
+              number: 3000
+      timeout: 30s
+
+    # API direct access catch-all for sde-dev-api
+    - match:
+        - authority:
+            exact: sde-dev-api.getstimulus.ai
+          uri:
+            prefix: /
+      route:
+        - destination:
+            host: stimulus-api.stimulus-dev.svc.cluster.local
+            port:
+              number: 8000
+      timeout: 300s
