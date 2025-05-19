@@ -24,19 +24,43 @@ spec:
               number: 8000
       timeout: 10s
 
-    # Vector Search from frontend (POST /api/vector-search) -- sde-dev.getstimulus.ai
     - match:
         - authority:
             exact: sde-dev.getstimulus.ai
           uri:
-            exact: /api/vector-search
+            exact: /api/clients
       route:
         - destination:
             host: stimulus-web.stimulus-dev.svc.cluster.local
             port:
               number: 3000
-      timeout: 300s
+      timeout: 10s      
 
+    - match:
+        - authority:
+            exact: sde-dev.getstimulus.ai
+          uri:
+            prefix: /api/assessment
+      route:
+        - destination:
+            host: stimulus-web.stimulus-dev.svc.cluster.local
+            port:
+              number: 3000
+      timeout: 10s
+
+    - match:
+        - authority:
+            exact: sde-dev.getstimulus.ai
+          uri:
+            prefix: /api/rfx
+      route:
+        - destination:
+            host: stimulus-web.stimulus-dev.svc.cluster.local
+            port:
+              number: 3000
+      timeout: 10s
+
+    # Vector Search from frontend (POST /api/vector-search) -- sde-dev.getstimulus.ai
     - match:
         - authority:
             exact: sde-dev.getstimulus.ai
