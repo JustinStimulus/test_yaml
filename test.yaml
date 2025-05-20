@@ -32,7 +32,7 @@ spec:
         image: stimulus.azurecr.io/stimulus-api:__IMAGE_TAG__
         imagePullPolicy: Always
         command: ["uvicorn"]
-        args: ["api.app:app", "--host", "0.0.0.0", "--port", "8000"]
+        args: ["stimulus_data_engine.api.app:app", "--host", "0.0.0.0", "--port", "8000"]
         ports:
         - containerPort: 8000
           protocol: TCP
