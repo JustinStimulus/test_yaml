@@ -27,12 +27,24 @@ spec:
             - "cluster.xds-grpc"
         traffic.sidecar.istio.io/includeInboundPorts: "8000"
     spec:
+      initContainers:
+        - name: time-sync
+          image: alpine
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              apk add --no-cache chrony &&
+              chronyd -q 'server pool.ntp.org iburst' &&
+              echo "Time synchronized: $(date)"
+          securityContext:
+            privileged: true      
       containers:
       - name: stimulus-api
         image: stimulus.azurecr.io/stimulus-api:__IMAGE_TAG__
         imagePullPolicy: Always
+        workingDir: /apps/api
         command: ["uvicorn"]
-        args: ["stimulus_data_engine.api.app:app", "--host", "0.0.0.0", "--port", "8000"]
+        args: ["src.app:app", "--host", "0.0.0.0", "--port", "8000"]
         ports:
         - containerPort: 8000
           protocol: TCP
@@ -66,6 +78,16 @@ spec:
             secretKeyRef:
               name: stimulus-secrets
               key: neo4j-uri
+        - name: NEO4J_USER
+          valueFrom:
+            secretKeyRef:
+              name: stimulus-secrets
+              key: neo4j-user
+        - name: NEO4J_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: stimulus-secrets
+              key: neo4j-password                            
         - name: OPENAI_API_KEY
           valueFrom:
             secretKeyRef:
@@ -78,11 +100,11 @@ spec:
               key: azure-openai-endpoint
         resources:
           requests:
-            cpu: 1000m
-            memory: 2Gi
+            cpu: 500m
+            memory: 512Mi
           limits:
-            cpu: 2000m
-            memory: 4Gi
+            cpu: "1"
+            memory: 1Gi
         livenessProbe:
           httpGet:
             path: /health
