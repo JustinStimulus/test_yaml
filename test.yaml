@@ -1,191 +1,176 @@
-apiVersion: apps/v1
-kind: Deployment
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
 metadata:
-  name: stimulus-api
+  name: stimulus-data-engine
   namespace: stimulus-dev
-  labels:
-    app: stimulus-api
-    environment: dev
 spec:
-  replicas: 2
-  selector:
-    matchLabels:
-      app: stimulus-api
-  template:
-    metadata:
-      labels:
-        app: stimulus-api
-      annotations:
-        proxy.istio.io/config: |
-          proxyStatsMatcher:
-            inclusionPrefixes:
-            - "cluster.outbound"
-            - "listener"
-            - "cluster_manager"
-            - "listener_manager"
-            - "server"
-            - "cluster.xds-grpc"
-        traffic.sidecar.istio.io/includeInboundPorts: "8000"
-    spec:
-      initContainers:
-        - name: time-sync
-          image: alpine
-          command: ["/bin/sh", "-c"]
-          args:
-            - |
-              apk add --no-cache chrony &&
-              chronyd -q 'server pool.ntp.org iburst' &&
-              echo "Time synchronized: $(date)"
-          securityContext:
-            privileged: true      
-      containers:
-      - name: stimulus-api
-        image: stimulus.azurecr.io/stimulus-api:__IMAGE_TAG__
-        imagePullPolicy: Always
-        workingDir: /apps/api
-        command: ["uvicorn"]
-        args: ["src.app:app", "--host", "0.0.0.0", "--port", "8000"]
-        ports:
-        - containerPort: 8000
-          protocol: TCP
-        env:
-        - name: PORT
-          value: "8000"
-        - name: HOST
-          value: "0.0.0.0"
-        - name: STIMULUS_API_KEY
-          valueFrom:
-            secretKeyRef:
-              name: stimulus-secrets
-              key: stimulus-api-key
-        - name: DATABRICKS_HOST
-          valueFrom:
-            secretKeyRef:
-              name: stimulus-secrets
-              key: databricks-host
-        - name: DATABRICKS_TOKEN
-          valueFrom:
-            secretKeyRef:
-              name: stimulus-secrets
-              key: databricks-token
-        - name: DATABRICKS_HTTP_PATH
-          valueFrom:
-            secretKeyRef:
-              name: stimulus-secrets
-              key: databricks-http-path
-        - name: NEO4J_URI
-          valueFrom:
-            secretKeyRef:
-              name: stimulus-secrets
-              key: neo4j-uri
-        - name: NEO4J_USER
-          valueFrom:
-            secretKeyRef:
-              name: stimulus-secrets
-              key: neo4j-user
-        - name: NEO4J_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: stimulus-secrets
-              key: neo4j-password                            
-        - name: OPENAI_API_KEY
-          valueFrom:
-            secretKeyRef:
-              name: stimulus-secrets
-              key: openai-api-key
-        - name: AZURE_OPENAI_ENDPOINT
-          valueFrom:
-            secretKeyRef:
-              name: stimulus-secrets
-              key: azure-openai-endpoint
-        resources:
-          requests:
-            cpu: 500m
-            memory: 512Mi
-          limits:
-            cpu: "1"
-            memory: 1Gi
-        livenessProbe:
-          httpGet:
-            path: /health
-            port: 8000
-          initialDelaySeconds: 30
-          periodSeconds: 10
-          timeoutSeconds: 1
-          failureThreshold: 3
-          successThreshold: 1
-        readinessProbe:
-          httpGet:
-            path: /health
-            port: 8000
-          initialDelaySeconds: 5
-          periodSeconds: 5
-          timeoutSeconds: 1
-          failureThreshold: 3
-          successThreshold: 1
+  gateways:
+    - stimulus-dev/stimulus-data-engine-gateway
+  hosts:
+    - sde-dev.getstimulus.ai
+    - sde-dev-api.getstimulus.ai
+  http:
+    # Global CORS policy
+    corsPolicy:
+      allowOrigins:
+        - exact: "https://sde-dev.getstimulus.ai"
+      allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+      allowHeaders: ["Authorization", "Content-Type", "X-Requested-With"]
+      exposeHeaders: ["Authorization", "Content-Type"]
+      allowCredentials: true
+      maxAge: "24h"
 
+    # Health Check
+    - match:
+        - authority:
+            exact: sde-dev-api.getstimulus.ai
+          uri:
+            exact: /health
+      route:
+        - destination:
+            host: stimulus-api.stimulus-dev.svc.cluster.local
+            port:
+              number: 8000
+      timeout: 10s
 
+    # Frontend routes
+    - match:
+        - authority:
+            exact: sde-dev.getstimulus.ai
+          uri:
+            exact: /api/clients
+      route:
+        - destination:
+            host: stimulus-web.stimulus-dev.svc.cluster.local
+            port:
+              number: 3000
+      timeout: 10s
 
+    - match:
+        - authority:
+            exact: sde-dev.getstimulus.ai
+          uri:
+            prefix: /api/assessment
+      route:
+        - destination:
+            host: stimulus-web.stimulus-dev.svc.cluster.local
+            port:
+              number: 3000
+      timeout: 10s
 
-# apiVersion: apps/v1
-# kind: Deployment
-# metadata:
-#   name: data-engine
-#   labels:
-#     app: data-engine
-# spec:
-#   replicas: 3
-#   selector:
-#     matchLabels:
-#       app: data-engine
-#   template:
-#     metadata:
-#       labels:
-#         app: data-engine
-#     spec:
-#       containers:
-#         - name: data-engine
-#           image: ghcr.io/org/data-engine:latest
-#           ports:
-#             - containerPort: 8000
-#           env:
-#             - name: ENVIRONMENT
-#               value: "production"
-#             - name: DATABASE_URL
-#               valueFrom:
-#                 secretKeyRef:
-#                   name: stimulus-secrets
-#                   key: database_url
-#           volumeMounts:
-#             - name: ssh-key-volume
-#               mountPath: "/root/.ssh"
-#               readOnly: true
-#           resources:
-#             requests:
-#               memory: "128Mi"
-#               cpu: "250m"
-#             limits:
-#               memory: "512Mi"
-#               cpu: "500m"
-#           readinessProbe:
-#             httpGet:
-#               path: /health
-#               port: 8000
-#             initialDelaySeconds: 5
-#             periodSeconds: 10
-#           livenessProbe:
-#             httpGet:
-#               path: /health
-#               port: 8000
-#             initialDelaySeconds: 10
-#             periodSeconds: 30
-#       volumes:
-#         - name: ssh-key-volume
-#           secret:
-#             secretName: github-ssh-key
-#             defaultMode: 0600
-#             items:
-#               - key: ssh-privatekey
-#                 path: id_ed25519
-#       imagePullSecrets:
-#         - name: ghcr-secret
+    - match:
+        - authority:
+            exact: sde-dev.getstimulus.ai
+          uri:
+            prefix: /api/rfx
+      route:
+        - destination:
+            host: stimulus-web.stimulus-dev.svc.cluster.local
+            port:
+              number: 3000
+      timeout: 10s
+
+    # Vector Search from frontend (POST /api/vector-search)
+    - match:
+        - authority:
+            exact: sde-dev.getstimulus.ai
+          uri:
+            exact: /api/vector-search
+      rewrite:
+        uri: /api/v1/vector-search/search
+      route:
+        - destination:
+            host: stimulus-api.stimulus-dev.svc.cluster.local
+            port:
+              number: 8000
+      headers:
+        request:
+          set:
+            x-forwarded-host: "sde-dev.getstimulus.ai"
+        response:
+          set:
+            access-control-allow-origin: "https://sde-dev.getstimulus.ai"
+            access-control-allow-credentials: "true"
+      timeout: 300s
+
+    # Vector Search direct API access
+    - match:
+        - authority:
+            exact: sde-dev-api.getstimulus.ai
+          uri:
+            exact: /api/vector-search
+      rewrite:
+        uri: /api/v1/vector-search/search
+      route:
+        - destination:
+            host: stimulus-api.stimulus-dev.svc.cluster.local
+            port:
+              number: 8000
+      timeout: 300s
+
+    # Databricks SQL Proxy
+    - match:
+        - authority:
+            exact: sde-dev.getstimulus.ai
+          uri:
+            prefix: /api/proxy/databricks-sql/
+      rewrite:
+        uri: /api/v1/databricks-sql/
+      route:
+        - destination:
+            host: stimulus-api.stimulus-dev.svc.cluster.local
+            port:
+              number: 8000
+      timeout: 300s
+
+    # CopilotKit handled by frontend
+    - match:
+        - authority:
+            exact: sde-dev.getstimulus.ai
+          uri:
+            prefix: /api/copilotkit
+      route:
+        - destination:
+            host: stimulus-web.stimulus-dev.svc.cluster.local
+            port:
+              number: 3000
+      timeout: 120s
+
+    # API catch-all (other /api/ calls)
+    - match:
+        - authority:
+            exact: sde-dev.getstimulus.ai
+          uri:
+            prefix: /api/
+      route:
+        - destination:
+            host: stimulus-api.stimulus-dev.svc.cluster.local
+            port:
+              number: 8000
+      timeout: 300s
+
+    # Frontend (dashboard, etc.)
+    - match:
+        - authority:
+            exact: sde-dev.getstimulus.ai
+          uri:
+            prefix: /
+      route:
+        - destination:
+            host: stimulus-web.stimulus-dev.svc.cluster.local
+            port:
+              number: 3000
+      timeout: 30s
+
+    # API direct access catch-all for sde-dev-api
+    - match:
+        - authority:
+            exact: sde-dev-api.getstimulus.ai
+          uri:
+            prefix: /
+      route:
+        - destination:
+            host: stimulus-api.stimulus-dev.svc.cluster.local
+            port:
+              number: 8000
+      timeout: 300s
