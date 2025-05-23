@@ -10,15 +10,24 @@ spec:
     - sde-dev.getstimulus.ai
     - sde-dev-api.getstimulus.ai
   http:
-    # Global CORS policy
-    corsPolicy:
-      allowOrigins:
-        - exact: "https://sde-dev.getstimulus.ai"
-      allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
-      allowHeaders: ["Authorization", "Content-Type", "X-Requested-With"]
-      exposeHeaders: ["Authorization", "Content-Type"]
-      allowCredentials: true
-      maxAge: "24h"
+    # Global route with CORS policy
+    - corsPolicy:
+        allowOrigins:
+          - exact: "https://sde-dev.getstimulus.ai"
+        allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+        allowHeaders: ["Authorization", "Content-Type", "X-Requested-With"]
+        exposeHeaders: ["Authorization", "Content-Type"]
+        allowCredentials: true
+        maxAge: "24h"
+      match:
+        - uri:
+            prefix: /
+      route:
+        - destination:
+            host: stimulus-web.stimulus-dev.svc.cluster.local
+            port:
+              number: 3000
+      timeout: 30s
 
     # Health Check
     - match:
@@ -148,19 +157,6 @@ spec:
             port:
               number: 8000
       timeout: 300s
-
-    # Frontend (dashboard, etc.)
-    - match:
-        - authority:
-            exact: sde-dev.getstimulus.ai
-          uri:
-            prefix: /
-      route:
-        - destination:
-            host: stimulus-web.stimulus-dev.svc.cluster.local
-            port:
-              number: 3000
-      timeout: 30s
 
     # API direct access catch-all for sde-dev-api
     - match:
