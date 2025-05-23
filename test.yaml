@@ -10,8 +10,13 @@ spec:
     - sde-dev.getstimulus.ai
     - sde-dev-api.getstimulus.ai
   http:
-    # Global route with CORS policy
-    - corsPolicy:
+    # Default route with CORS policy for frontend
+    - match:
+        - authority:
+            exact: sde-dev.getstimulus.ai
+          uri:
+            prefix: /
+      corsPolicy:
         allowOrigins:
           - exact: "https://sde-dev.getstimulus.ai"
         allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
@@ -19,9 +24,6 @@ spec:
         exposeHeaders: ["Authorization", "Content-Type"]
         allowCredentials: true
         maxAge: "24h"
-      match:
-        - uri:
-            prefix: /
       route:
         - destination:
             host: stimulus-web.stimulus-dev.svc.cluster.local
@@ -42,7 +44,7 @@ spec:
               number: 8000
       timeout: 10s
 
-    # Frontend routes
+    # Frontend API routes
     - match:
         - authority:
             exact: sde-dev.getstimulus.ai
@@ -79,7 +81,7 @@ spec:
               number: 3000
       timeout: 10s
 
-    # Vector Search from frontend (POST /api/vector-search)
+    # Vector Search from frontend
     - match:
         - authority:
             exact: sde-dev.getstimulus.ai
@@ -132,7 +134,7 @@ spec:
               number: 8000
       timeout: 300s
 
-    # CopilotKit handled by frontend
+    # CopilotKit
     - match:
         - authority:
             exact: sde-dev.getstimulus.ai
@@ -145,7 +147,7 @@ spec:
               number: 3000
       timeout: 120s
 
-    # API catch-all (other /api/ calls)
+    # API catch-all
     - match:
         - authority:
             exact: sde-dev.getstimulus.ai
@@ -158,7 +160,7 @@ spec:
               number: 8000
       timeout: 300s
 
-    # API direct access catch-all for sde-dev-api
+    # API direct access catch-all
     - match:
         - authority:
             exact: sde-dev-api.getstimulus.ai
